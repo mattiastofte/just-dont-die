@@ -7,7 +7,28 @@
  http://simpson.edu/computer-science/
  
 """
- 
+
+# Setup
+import os
+
+try:
+    pygame_package_info = os.popen("pip3 show pygame").read()
+    index = pygame_package_info.find("Version:")
+    pygame_version = str(pygame_package_info[index+9:index+14])
+except:
+    pygame_version = "null"
+
+if pygame_version == "2.0.0":
+    print("correct version of pygame detected.")
+else:
+    print("error: correct version of pygame is not installed")
+    print("installing pygame 2.0.0 ...")
+    try:
+        os.system("pip3 install pygame==2.0.0")
+        print("correct version of pygame was successfully installed")
+    except:
+        print("couldn't install correct version of pygame")
+
 import pygame
 from pygame.locals import *
 
@@ -33,7 +54,7 @@ flags = pygame.FULLSCREEN | pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF
 display = pygame.display.set_mode((width, height), flags, vsync=1)
 
 # Set the title of the window
-pygame.display.set_caption(f"{title} - {stage} version")
+pygame.display.set_caption(f"{title} - {stage} {version}")
 
 clock = pygame.time.Clock()
 running = True
