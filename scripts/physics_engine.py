@@ -7,6 +7,7 @@ import random
 # Collisions: normal collisions or bouncy collisions.
 
 active_entities = []
+active_particles = []
 
 class Entity:
     def __init__(self, name, x, y, width, height, explode):
@@ -53,10 +54,10 @@ class Particle:
         self.y = y
         self.width = width
         self.height = height
-        self.x_v = (-4+random.random()*8)
+        self.x_v = (-8+random.random()*16)
         self.y_v = -1*(random.random()*6)
         self.explode = explode
-        active_entities.append(self)
+        active_particles.append(self)
 
     def rect(self):
         return pygame.Rect(int(self.x),int(self.y),int(self.width),int(self.height))
@@ -67,10 +68,10 @@ class Particle:
         self.y += self.y_v
         self.x += self.x_v
         if self.width > 0:
-            self.width -= 0.2
-            self.height -= 0.2
+            self.width -= 0.1
+            self.height -= 0.1
         else:
             if self.explode == True:
                 for i in range(10):
                     Particle(self.x,self.y,3,3,False)
-            active_entities.remove(self)
+            active_particles.remove(self)
