@@ -1,15 +1,17 @@
-"""
- Simple snake example.
- 
- Sample Python/Pygame Programs
- Simpson College Computer Science
- http://programarcadegames.com/
- http://simpson.edu/computer-science/
- 
-"""
-
 # Setup
 import os
+import math
+
+def install(libary):
+    if libary == "pygame":
+        print("[info] installing pygame 2.0.0 ...")
+        try:
+            os.system("pip3 install pygame==2.0.0")
+            print("[info] correct version of pygame was successfully installed")
+        except:
+            print("[error] failed to install correct version of pygame")
+    else:
+        pass
 
 try:
     pygame_package_info = os.popen("pip3 show pygame").read()
@@ -19,15 +21,13 @@ except:
     pygame_version = "null"
 
 if pygame_version == "2.0.0":
-    print("correct version of pygame detected.")
+    print("[info] correct version of pygame detected.")
+elif pygame_version == "null":
+    print("[warning] pygame libary is missing")
+    install("pygame")
 else:
-    print("error: correct version of pygame is not installed")
-    print("installing pygame 2.0.0 ...")
-    try:
-        os.system("pip3 install pygame==2.0.0")
-        print("correct version of pygame was successfully installed")
-    except:
-        print("couldn't install correct version of pygame")
+    print("[warning] pygame is outdated and an update is required.")
+    install("pygame")
 
 import pygame
 from pygame.locals import *
@@ -48,6 +48,7 @@ title = "nightfall"
 stage = "alpha"
 width = 320
 height = 180
+fps = 60
 
 # Creates a display and a screen
 flags = pygame.FULLSCREEN | pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF
@@ -59,6 +60,7 @@ pygame.display.set_caption(f"{title} - {stage} {version}")
 clock = pygame.time.Clock()
 running = True
 
+
 logo = pygame.image.load("assets/text/logo.png")
 x = 0
 while running:
@@ -66,17 +68,13 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-    
-    if x > 60:
-        x = 0
-    x += 1
+    x += 0.25
     # Clear screen
     display.fill(BLACK)
-    display.blit(logo,(0,x))
+    display.blit(logo,(math.sin(x)*10,math.cos(x)*30))
     # Update screen
     pygame.display.flip()
- 
     # Pause
-    clock.tick(60)
+    clock.tick(fps)
  
 pygame.quit()
