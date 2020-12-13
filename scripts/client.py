@@ -18,7 +18,7 @@ debug = False
 
 # STATIC INIT VARIABLES
 monitor = pygame.display.Info()
-version = "0.0.1"
+version = "1.0.2"
 title = "nightfall"
 stage = "alpha"
 graphics_width = 320
@@ -41,6 +41,7 @@ pygame.display.set_icon(icon)
 
 Entity("player", [50,50], [10,10])
 d = Point_Gravity([100, 100], 2)
+entities_dict.get("player").forces.update({"gravity":[0,-0.12]})
 
 while running:
  
@@ -55,7 +56,6 @@ while running:
     for i in range(1):
         s = random.randint(4,6)
         Particle(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],s,s,False)
-
     # GAME LOGIC 
     Move_Entity(pygame.key.get_pressed(),entities_dict["player"])
     d.update(entities_active)
