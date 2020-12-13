@@ -1,4 +1,4 @@
-test = {"gravity":[1,2],"space":[2,4]}
-
-for force in test:
-    print(test[force])
+import numpy as np
+import math
+test = np.array([4,2,5,6])
+print(test[2])

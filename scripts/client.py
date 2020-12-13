@@ -4,10 +4,12 @@ import math
 import random
 import pygame
 from pygame.locals import *
+from pygame import *
 
 # IMPORT SCRIPTS
 from physics_engine import *
 from rendering_engine import *
+from game_logic import *
 
 pygame.init()
 
@@ -32,10 +34,13 @@ pygame.display.set_caption(f"{title} - {stage} {version}")
 
 clock = pygame.time.Clock()
 running = True
-
 logo = pygame.image.load("assets/fonts/logo.png")
+icon = pygame.image.load("assets/icons/game_icon.png")
 
-Entity([50,50], [10,10])
+pygame.display.set_icon(icon)
+
+Entity("player", [50,50], [10,10])
+d = Point_Gravity([100, 100], 2)
 
 while running:
  
@@ -43,14 +48,23 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    frame_length = clock.get_fps()/60
+    frame_length = clock.get_fps()/60  
     Clear_Surface(display)
+    d.x = pygame.mouse.get_pos()[0]
+    d.y = pygame.mouse.get_pos()[1]
     for i in range(1):
         s = random.randint(4,6)
         Particle(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],s,s,False)
 
+    # GAME LOGIC 
+    Move_Entity(pygame.key.get_pressed(),entities_dict["player"])
+    d.update(entities_active)
+
+    # RENDERING ENGINE
     Render_Particles(display,active_particles,frame_length)
-    Render_Entities(display,active_entities,frame_length,{})
+    Render_Entities(display,entities_active,frame_length,True)
+    
+
 
     print(f"{len(active_particles)} + {clock.get_fps()} ")
 

@@ -1,16 +1,20 @@
 import pygame
 import random
+import numpy as np
 
 # FEATURES
 # Entities: simple rectangular hitboxes, elasisity from 0-1, solid or movable.
 # Physics: position, velocity, acceleration, forces, displacement.
 # Collisions: normal collisions or bouncy collisions.
 
-active_entities = []
+# STORAGE
+entities_active = []
+entities_dict = {}
 active_particles = []
 
 class Entity:
-    def __init__(self, pos, size, movement=[0,0,0,0]):
+    def __init__(self, name, pos, size, movement=[0,0,0,0]):
+        self.name = name
         self.x = pos[0]
         self.y = pos[1]
         self.width = size[0]
@@ -19,16 +23,18 @@ class Entity:
         self.y_a = movement[1]
         self.x_v = movement[2]
         self.y_v = movement[3]
-        active_entities.append(self)
+        self.forces = {}
+        entities_dict.update({self.name:self})
+        entities_active.append(self)
 
     def rect(self):
         return pygame.Rect(int(self.x),int(self.y),int(self.width),int(self.height))
 
-    def update(self, time_delta, forces):
+    def update(self, time_delta):
         self.x_a = 0
         self.y_a = 0
-        for force in forces:
-            vector = forces[force]
+        for force in self.forces:
+            vector = self.forces[force]
             self.x_a += vector[0] 
             self.y_a += vector[1]
         self.x_v += self.x_a
@@ -67,3 +73,15 @@ class Particle:
                 for i in range(10):
                     Particle(self.x,self.y,3,3,False)
             active_particles.remove(self)
+
+class Point_Gravity:
+    def __init__(self,pos,strength):
+        self.x = pos[0]
+        self.y = pos[1]
+        self.strength = strength
+    
+    def update(self, entities):
+        for entity in entities:
+            force_vector = np.array([(self.x-entity.x),-1*(self.y-entity.y)])
+            scalar = self.strength/(np.linalg.norm(force_vector))**1.5 # finner lengden av vektoren
+            entity.forces.update({"point":list(force_vector*scalar)})
