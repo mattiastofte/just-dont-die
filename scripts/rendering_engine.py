@@ -28,11 +28,11 @@ def Render_Particles(display,particles,time_delta):
 def Render_Entities(display,entities,time_delta,show_vectors=False):
     for entity in entities:
         entity.update(time_delta)
-        pygame.draw.rect(display, (100, 100, 100), entity.rect())
-    x = entity.x + int(entity.width/2)
-    y = entity.y + int(entity.height/2)
+        pygame.draw.rect(display, (0, 255, 0), entity.rect())
     if show_vectors:
         for entity in entities:
             for force in entity.forces:
+                x = entity.x + int(entity.width/2)
+                y = entity.y + int(entity.height/2)
                 vector = entity.forces[force]
                 pygame.draw.line(display, (255,0,0), [x, y], [x+vector[0]*100,y-vector[1]*100])

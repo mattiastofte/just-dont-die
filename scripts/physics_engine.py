@@ -74,6 +74,13 @@ class Particle:
                     Particle(self.x,self.y,3,3,False)
             active_particles.remove(self)
 
+def Impulse(pos,strength,entities):
+    for entity in entities:
+        force_vector = np.array([-1*(pos[0]-entity.x),(pos[1]-entity.y)])
+        scalar = strength/(np.linalg.norm(force_vector))**2
+        entity.forces.update({"explosion":list(force_vector*scalar)})
+    
+
 class Point_Gravity:
     def __init__(self,pos,strength):
         self.x = pos[0]
@@ -83,5 +90,5 @@ class Point_Gravity:
     def update(self, entities):
         for entity in entities:
             force_vector = np.array([(self.x-entity.x),-1*(self.y-entity.y)])
-            scalar = self.strength/(np.linalg.norm(force_vector))**1.5 # finner lengden av vektoren
+            scalar = self.strength/(np.linalg.norm(force_vector))**2 # finner lengden av vektoren
             entity.forces.update({"point":list(force_vector*scalar)})

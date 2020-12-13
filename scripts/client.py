@@ -40,9 +40,14 @@ icon = pygame.image.load("assets/icons/game_icon.png")
 pygame.display.set_icon(icon)
 
 Entity("player", [50,50], [10,10])
-d = Point_Gravity([100, 100], 2)
-entities_dict.get("player").forces.update({"gravity":[0,-0.12]})
+Entity("player_2", [100, 50], [10,10])
+Entity("player_3", [0,50], [5,5])
+Entity("player_4", [20, 200], [6,6])
+Entity("player_5", [100, 10], [10,10])
 
+
+d = Point_Gravity([100, 100], 2)
+mouse_down = True
 while running:
  
     for event in pygame.event.get():
@@ -53,9 +58,15 @@ while running:
     Clear_Surface(display)
     d.x = pygame.mouse.get_pos()[0]
     d.y = pygame.mouse.get_pos()[1]
-    for i in range(1):
-        s = random.randint(4,6)
-        Particle(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],s,s,False)
+    if pygame.mouse.get_pressed()[0]:
+        if mouse_down == False:
+            for i in range(10):
+                s = random.randint(4,6)
+                Particle(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],s,s,False)
+                Impulse((pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1]),100,entities_active)
+        mouse_down = True
+    else:
+        mouse_down = False
     # GAME LOGIC 
     Move_Entity(pygame.key.get_pressed(),entities_dict["player"])
     d.update(entities_active)
@@ -67,6 +78,9 @@ while running:
 
 
     print(f"{len(active_particles)} + {clock.get_fps()} ")
+
+    for entity in entities_active:
+        entity.forces.update({"explosion":[0,0]})
 
 
     # Update screen
