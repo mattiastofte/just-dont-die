@@ -34,6 +34,9 @@ clock = pygame.time.Clock()
 running = True
 
 logo = pygame.image.load("assets/fonts/logo.png")
+
+Entity([50,50], [10,10])
+
 while running:
  
     for event in pygame.event.get():
@@ -42,13 +45,14 @@ while running:
 
     frame_length = clock.get_fps()/60
     Clear_Surface(display)
-    if random.randint(1,4) == 1:
+    for i in range(1):
         s = random.randint(4,6)
-        Particle(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],s,s,True)
+        Particle(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],s,s,False)
 
     Render_Particles(display,active_particles,frame_length)
+    Render_Entities(display,active_entities,frame_length,{})
 
-    print(f"{len(active_entities)} + {clock.get_fps()} ")
+    print(f"{len(active_particles)} + {clock.get_fps()} ")
 
 
     # Update screen
