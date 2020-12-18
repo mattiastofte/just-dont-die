@@ -1,6 +1,7 @@
 import pygame
 import random
 import numpy as np
+from rendering_engine import camera
 
 # FEATURES
 # Entities: simple rectangular hitboxes, elasisity from 0-1, solid or movable.
@@ -12,11 +13,14 @@ entities_active = []
 entities_dict = {}
 active_particles = []
 
+def Vector(x,y):
+    return np.array([x,y])
+
 class Entity:
     def __init__(self, name, pos, size, movement=[0,0,0,0]):
         self.name = name
-        self.x = pos[0]
-        self.y = pos[1]
+        self.x = pos[0]+camera[0]
+        self.y = pos[1]+camera[1]
         self.width = size[0]
         self.height = size[1]
         self.x_a = movement[0]
@@ -28,7 +32,7 @@ class Entity:
         entities_active.append(self)
 
     def rect(self):
-        return pygame.Rect(int(self.x),int(self.y),int(self.width),int(self.height))
+        return pygame.Rect(int(self.x+camera[0]),int(self.y+camera[1]),int(self.width),int(self.height))
 
     def update(self, time_delta):
         self.x_a = 0
@@ -41,6 +45,9 @@ class Entity:
         self.y_v += self.y_a
         self.x += self.x_v
         self.y -= self.y_v
+
+    def update_force(self,force_name,vector):
+        pass
             
         
 class Emitter:
@@ -77,7 +84,7 @@ class Particle:
 def Impulse(pos,strength,entities):
     for entity in entities:
         force_vector = np.array([-1*(pos[0]-entity.x),(pos[1]-entity.y)])
-        scalar = strength/(np.linalg.norm(force_vector))**2
+        scalar = strength/(np.linalg.norm(force_vector))**1.5
         entity.forces.update({"explosion":list(force_vector*scalar)})
     
 
