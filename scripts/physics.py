@@ -1,7 +1,7 @@
 import pygame
 import random
 import numpy as np
-from rendering_engine import camera
+from rendering import camera
 
 # FEATURES
 # Entities: simple rectangular hitboxes, elasisity from 0-1, solid or movable.
@@ -13,8 +13,8 @@ entities_active = []
 entities_dict = {}
 active_particles = []
 
-def Vector(x,y):
-    return np.array([x,y])
+#def Vector(x,y):
+#    return np.array([x,y])
 
 class Entity:
     def __init__(self, name, pos, size, movement=[0,0,0,0]):
@@ -45,6 +45,8 @@ class Entity:
         self.y_v += self.y_a
         self.x += self.x_v
         self.y -= self.y_v
+        self.x_v = self.x_v/1.05
+        self.y_v = self.y_v/1.05
 
     def update_force(self,force_name,vector):
         pass
@@ -99,3 +101,6 @@ class Point_Gravity:
             force_vector = np.array([(self.x-entity.x),-1*(self.y-entity.y)])
             scalar = self.strength/(np.linalg.norm(force_vector))**2 # finner lengden av vektoren
             entity.forces.update({"point":list(force_vector*scalar)})
+
+def Physics_Engine():
+    pass

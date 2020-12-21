@@ -1,0 +1,8 @@
+{
+    "workbench.colorCustomizations": {
+    "[Monokai ST3]": {
+        "activityBar.background": "#1b1b1b",
+        "editor.background": "#252525"
+    }
+    }
+}
