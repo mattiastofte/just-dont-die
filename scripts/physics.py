@@ -1,7 +1,10 @@
 import pygame
+from pygame import *
+from pygame.locals import *
 import random
 import numpy as np
 from rendering import camera
+from assets import *
 
 # FEATURES
 # Entities: simple rectangular hitboxes, elasisity from 0-1, solid or movable.
@@ -9,49 +12,61 @@ from rendering import camera
 # Collisions: normal collisions or bouncy collisions.
 
 # STORAGE
-entities_active = []
-entities_dict = {}
+dict_entities = {}
+active_entities = []
 active_particles = []
 
 #def Vector(x,y):
 #    return np.array([x,y])
 
-class Entity:
-    def __init__(self, name, pos, size, movement=[0,0,0,0]):
+class Entity(pygame.sprite.Sprite):
+    def __init__(self, name, pos, forces={}, vel=[0,0]):
+        pygame.sprite.Sprite.__init__(self)
         self.name = name
-        self.x = pos[0]+camera[0]
-        self.y = pos[1]+camera[1]
-        self.width = size[0]
-        self.height = size[1]
-        self.x_a = movement[0]
-        self.y_a = movement[1]
-        self.x_v = movement[2]
-        self.y_v = movement[3]
-        self.forces = {}
-        entities_dict.update({self.name:self})
-        entities_active.append(self)
-
-    def rect(self):
-        return pygame.Rect(int(self.x+camera[0]),int(self.y+camera[1]),int(self.width),int(self.height))
+        self.pos = pos
+        self.vel = vel
+        self.forces = forces
+        self.image = pygame.image.load('assets/green.png')
+        self.rect = self.image.get_rect()
 
     def update(self, time_delta):
-        self.x_a = 0
-        self.y_a = 0
         for force in self.forces:
-            vector = self.forces[force]
-            self.x_a += vector[0] 
-            self.y_a += vector[1]
-        self.x_v += self.x_a
-        self.y_v += self.y_a
-        self.x += self.x_v
-        self.y -= self.y_v
-        self.x_v = self.x_v/1.05
-        self.y_v = self.y_v/1.05
+            self.vel[0] += self.forces[force][0]*time_delta
+            self.vel[1] += self.forces[force][1]*time_delta
+        self.pos[0] += self.vel[0]
+        self.pos[1] -= self.vel[1]
+        self.rect.center = [self.pos[0]+camera[0],self.pos[1]+camera[1]]
+        pygame.sprite.collide_mask(self,test_map)
 
-    def update_force(self,force_name,vector):
-        pass
-            
-        
+class Map(pygame.sprite.Sprite):
+    def __init__(self,map):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = Generate_Map(map)
+        self.rect = self.image.get_rect()
+
+    def update(self):
+        self.rect.center = [camera[0],camera[1]]
+
+#class Entity:
+#    def __init__(self, name, pos, size, forces={}, vel=[0,0]):
+#        self.name = name
+#        self.pos = pos
+#        self.vel = vel
+#        self.size = size
+#        self.forces = forces
+#        dict_entities.update({self.name:self})
+#        active_entities.append(self)
+
+#    def rect(self):
+#        return pygame.Rect(int(self.pos[0]+camera[0]),int(self.pos[1]+camera[1]),int(self.size[0]),int(self.size[1]))
+
+#    def update(self, time_delta):
+#        for force in self.forces:
+#            self.vel[0] += self.forces[force][0]*time_delta
+#            self.vel[1] += self.forces[force][1]*time_delta
+#        self.pos[0] += self.vel[0]
+#        self.pos[1] -= self.vel[1]
+
 class Emitter:
     pass
 
@@ -104,3 +119,8 @@ class Point_Gravity:
 
 def Physics_Engine():
     pass
+
+def Update_Entities(time_delta):
+    for entity in active_entities:
+        entity.update(time_delta)
+

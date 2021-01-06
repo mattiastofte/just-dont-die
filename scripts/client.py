@@ -1,102 +1,190 @@
 # SETUP
-import os
-import math
-import random
 import pygame
 from pygame.locals import *
 from pygame import *
+import os
+import math
+import random
 
 # IMPORT SCRIPTS
-from physics_engine import *
 from rendering import *
-from game_logic import *
+from assets import *
 
 pygame.init()
 
 # STATIC INIT VARIABLES
 monitor = pygame.display.Info()
-version = "1.0.2"
+version = "1.0.4"
 title = "just don't die!"
 stage = "alpha"
 graphics_width = 320
-graphics_height = 180
+graphics_height = 180 
 fps = 60
 
-# Creates a display and a screen
+# INITIALIZE DISPLAY
 flags = pygame.FULLSCREEN | pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF
 display = pygame.display.set_mode((graphics_width, graphics_height), flags, vsync=1)
-
-# Set the title of the window
 pygame.display.set_caption(f"{title} - {stage} {version}")
-
-clock = pygame.time.Clock()
-running = True
 icon = pygame.image.load("assets/icons/game_icon.png")
-
 pygame.display.set_icon(icon)
 
-Entity("player", [50,50], [10,10])
-Entity("player_2", [100, 50], [10,10])
-Entity("player_3", [0,50], [5,5])
-Entity("player_4", [20, 200], [6,6])
-Entity("player_5", [100, 10], [10,10])
+# LOAD ASSETS
+tile_images = Load_Tile_Assets()
 
-mouse_down = True
+# FUNCTIONS
+sign = lambda x: math.copysign(1, x) 
+
+class Entity(pygame.sprite.Sprite):
+    def __init__(self, name, pos, forces={}, vel=[0,0]):
+        pygame.sprite.Sprite.__init__(self)
+        self.name = name
+        self.pos = pos
+        self.vel = vel
+        self.forces = forces
+        self.image = pygame.image.load('assets/characters/player/green.png')
+        self.rect = self.image.get_rect()
+        self.collisions = []
+        self.mask = pygame.mask.Mask((self.rect.width,self.rect.height),fill=True)
+        self.mask.fill()
+
+    def update(self, tile_hitboxes, time_delta):
+        # ITTARATE TROUGH FORCES
+        for force in self.forces:
+            self.vel[0] += self.forces[force][0]*time_delta
+            self.vel[1] += self.forces[force][1]*time_delta
+            
+        # X-VECTOR MOVEMENT
+        self.pos[0] += self.vel[0]
+        self.rect.right = self.pos[0]+camera[0]
+        for hitbox in tile_hitboxes:
+            if self.rect.colliderect(hitbox): 
+                if self.vel[0] > 0:
+                    self.pos[0] = hitbox.left - camera[0]
+                else:
+                    self.pos[0] = hitbox.right + self.rect.width - camera[0]
+                self.rect.right = self.pos[0]+camera[0]
+
+        # Y-VECTOR MOVEMENT
+        self.pos[1] -= self.vel[1]
+        self.rect.bottom = self.pos[1]+camera[1]
+        for hitbox in tile_hitboxes:
+            if self.rect.colliderect(hitbox): 
+                if self.vel[1] < 0: 
+                    self.pos[1] = hitbox.bottom - camera[1] - 8
+                else:
+                    self.pos[1] = hitbox.top + self.rect.height - camera[1] + 8
+                self.rect.bottom = self.pos[1]+camera[1]
+
+class Tile(pygame.sprite.Sprite):
+    def __init__(self, pos, asset):
+        pygame.sprite.Sprite.__init__(self)
+        self.pos = pos
+        self.image = asset
+        self.rect = self.image.get_rect()
+
+    def update(self):
+        self.rect.center = [self.pos[0]+camera[0],self.pos[1]+camera[1]]
+        display.blit(self.image,(self.rect.x,self.rect.y))
+
+#class Map(pygame.sprite.Sprite):
+#    def __init__(self,map):
+#        pygame.sprite.Sprite.__init__(self)
+#        self.image = Generate_Map(map)
+#        self.rect = self.image.get_rect()
+#        self.mask = pygame.mask.from_surface(self.image)
+#
+#    def update(self):
+#        self.rect.center = [camera[0],camera[1]]
+
+def Generate_Tiles():
+    delta = [0,0]
+    with open(f'data/test.csv', newline='') as f:
+        reader = csv.reader(f)
+        data = list(reader)
+    for row in data:
+        for column in row:
+            if column == '1':
+                tiles.append(Tile([delta[0],delta[1]],tile_images.get('dirt')))
+            else:
+                pass
+            delta[0] += 8
+        delta[0] = 0
+        delta[1] += 8
+
+def Render_Tiles(tiles):
+    global tile_hitboxes
+    tile_hitboxes = []
+    for tile in tiles:
+        if tile.pos[0]+camera[0]>10 and tile.pos[0]+camera[0]<300:
+            if tile.pos[1]+camera[1]>10 and tile.pos[1]+camera[1]<170:
+                tile.update()
+                tile_hitboxes.append(tile.rect)
+        
 
 def get_time_delta():
     return clock.get_fps()/fps
 
+def Move_Camera(keys):
+    if keys[K_RIGHT]:
+        Scroll_Camera([5,0])
+    if keys[K_LEFT]:
+        Scroll_Camera([-5,0])
+    if keys[K_UP]:
+        Scroll_Camera([0,5])
+    if keys[K_DOWN]:
+        Scroll_Camera([0,-5])
+
+def Move_Player(keys):
+    if keys[K_d]:
+        player.vel[0] += 0.1
+    if keys[K_a]:
+        player.vel[0] -= 0.1
+    if keys[K_w]:
+        player.vel[1] += 0.1
+    if keys[K_s]:
+        player.vel[1] -= 0.1
+    if keys[K_SPACE]:
+        player.vel[0] = 0
+        player.vel[1] = 0
+
+# GAME LOOP
+
+# VARIABLES
+tiles = []
+tile_hitboxes = []
+
+# OBJECTS
+clock = pygame.time.Clock()
+level = pygame.sprite.Group()
+player = Entity('player', [0,0])
+entities = pygame.sprite.Group()
+entities.add(player)
+Generate_Tiles()
+
+running = True
+
 while running:
-    frame_length = get_time_delta()
-    for event in pygame.event.get():
+    time_delta = get_time_delta()
+    keys = pygame.key.get_pressed()
+    events = pygame.event.get()
+
+    for event in events:    
         if event.type == pygame.QUIT:
             running = False
-    Clear_Surface(display)
-    Update_Camera([entities_dict.get("player").x,entities_dict.get("player").y])
-    if pygame.mouse.get_pressed()[0]:
-        if mouse_down == False:
-            for i in range(100):
-                s = random.randint(4,6)
-                Particle(pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1],s,s,False)
-                Impulse((pygame.mouse.get_pos()[0],pygame.mouse.get_pos()[1]),30,entities_active)
-        mouse_down = True
-    else:
-        mouse_down = False
-    keys = pygame.key.get_pressed()
-    if keys[K_w]:
-        entities_dict.get("player").forces.update({"up":[0,1]})
-    else:
-        entities_dict.get("player").forces.update({"up":[0,0]})
-    if keys[K_s]:
-        entities_dict.get("player").forces.update({"down":[0,-1]})
-    else:
-        entities_dict.get("player").forces.update({"down":[0,0]})
-    if keys[K_d]:
-        entities_dict.get("player").forces.update({"right":[1,0]})
-    else:
-        entities_dict.get("player").forces.update({"right":[0,0]})
-    if keys[K_a]:
-        entities_dict.get("player").forces.update({"left":[-1,0]})
-    else:
-        entities_dict.get("player").forces.update({"left":[0,0]})
 
-    Render_Particles(display,active_particles,frame_length)
-    Render_Entities(display,entities_active,frame_length,True)
-    # GAME LOGIC 
-    Move_Entity(pygame.key.get_pressed(),entities_dict["player"])
-    #d.update(entities_active)
-
-    # RENDERING ENGINE
-
-    #print(f"{len(active_particles)} + {clock.get_fps()} ")
-
-    for entity in entities_active:
-        entity.forces.update({"explosion":[0,0]})
-
-    # Update screen
+    # RENDERING
+    display.fill((255,255,255))
+    Render_Tiles(tiles)
+    entities.update(tile_hitboxes,time_delta)
+    entities.draw(display) 
+    Move_Player(keys)
+    Move_Camera(keys)
+    # SCREEN UPDATE
     pygame.display.flip()
 
-    # Pause
+    # FPS CAP
     clock.tick(fps)
- 
+    #print(clock.get_fps())
+    print(len(tile_hitboxes))
+    
 pygame.quit()
