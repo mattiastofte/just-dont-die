@@ -52,7 +52,11 @@ class Entity(pygame.sprite.Sprite):
         for force in self.forces:
             self.vel[0] += self.forces[force][0]*time_delta
             self.vel[1] += self.forces[force][1]*time_delta
-            
+
+        # UPDATE POS WITH CAMERA
+        self.rect.right = self.pos[0]+camera[0]
+        self.rect.bottom = self.pos[1]+camera[1]
+
         # X-VECTOR MOVEMENT
         self.pos[0] += self.vel[0]
         self.rect.right = self.pos[0]+camera[0]
@@ -172,19 +176,22 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+    # INPUT
+    Move_Player(keys)
+    Move_Camera(keys)
+
     # RENDERING
     display.fill((255,255,255))
     Render_Tiles(tiles)
     entities.update(tile_hitboxes,time_delta)
     entities.draw(display) 
-    Move_Player(keys)
-    Move_Camera(keys)
+
     # SCREEN UPDATE
     pygame.display.flip()
 
     # FPS CAP
-    clock.tick(fps)
+    clock.tick(60)
     #print(clock.get_fps())
-    print(len(tile_hitboxes))
+    print(clock.get_fps())
     
 pygame.quit()
