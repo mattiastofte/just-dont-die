@@ -25,6 +25,8 @@ def Generate_Empty_Map(name):
 def Load_Tile_Assets():
     tile_images = {}
     tile_images.update({'dirt':pygame.image.load('assets/tiles/basic.png')})
+    for tile in tile_images:
+        tile_images.update({tile:pygame.transform.scale(tile_images[tile], [16,16])})
     return tile_images
 #def Generate_Map(name):
 #    map_surface = pygame.Surface((1028,1028), pygame.SRCALPHA, 32)
