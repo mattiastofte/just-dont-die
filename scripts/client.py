@@ -14,7 +14,7 @@ pygame.init()
 
 # STATIC INIT VARIABLES
 monitor = pygame.display.Info()
-version = "1.0.4"
+version = "1.0.5"
 title = "just don't die!"
 stage = "alpha"
 graphics_width = 640
@@ -24,7 +24,7 @@ fps = 60
 # INITIALIZE DISPLAY
 flags = pygame.FULLSCREEN | pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF
 display = pygame.display.set_mode((graphics_width, graphics_height), flags, vsync=1)
-pygame.display.set_caption(f"{title} - {stage} {version}")
+pygame.display.set_caption(f"{title} - {version} ({stage})")
 icon = pygame.image.load("assets/icons/game_icon.png")
 pygame.display.set_icon(icon)
 
@@ -50,6 +50,9 @@ class Entity(pygame.sprite.Sprite):
         self.touching_ground = False
         self.show_vectors = True
         self.jump = 0
+        self.name_tag_text = font.render(f'madiasu', True, (255,255,255), (38,38,38))
+        self.name_tag = pygame.Surface((int(self.name_tag_text.get_width()+8),int(self.name_tag_text.get_height()+8)))
+        self.name_tag.blit(self.name_tag_text,(4,4))
 
     def update(self, tile_hitboxes, time_delta):
 
@@ -84,7 +87,6 @@ class Entity(pygame.sprite.Sprite):
 
         # Y-VECTOR MOVEMENT
         self.pos[1] -= self.vel[1]
-        # CHECKPOINT
         self.rect.bottom = int(self.pos[1]) - camera[1]
         for hitbox in tile_hitboxes:
             if self.rect.colliderect(hitbox): 
@@ -105,10 +107,13 @@ class Entity(pygame.sprite.Sprite):
                     self.touching_ground = True
             self.rect.bottom = int(self.pos[1]) - camera[1] 
 
+        # RENDER NAMETAG
+        display.blit(self.name_tag,(player.pos[0]-camera[0]+4,player.pos[1]-camera[1]+4))
+
         # DRAW VECTORS
         if self.show_vectors:
             for force in self.forces:
-                pygame.draw.line(display, (255,0,0), [self.pos[0]-camera[0],self.pos[1]-camera[1]], [self.pos[0]+(self.forces[force][0]*100)-camera[0],self.pos[1]+(self.forces[force][1]*100)-camera[1]])
+                pygame.draw.line(display, (255,0,0), [self.pos[0]-camera[0],self.pos[1]-camera[1]], [self.pos[0]+(self.forces[force][0]*100)-camera[0],self.pos[1]-(self.forces[force][1]*100)-camera[1]],2)
         
 
 class Tile(pygame.sprite.Sprite):
@@ -173,23 +178,23 @@ def Move_Camera(keys):
     print(f'player-x: {player.pos[0]} player-y: {player.pos[1]}')
 
 def Follow_Camera(entity):
-    Scroll_Camera_Pos(((entity.pos[0]-camera_pos[0]-310)/20,(entity.pos[1]-camera_pos[1]-200)/20))
+    Scroll_Camera_Pos(((entity.pos[0]-camera_pos[0]-310)/10,(entity.pos[1]-camera_pos[1]-200)/10))
 
 
 def Move_Player(keys):
     if keys[K_d]:
         if player.touching_ground:
-            player.forces.update({'move_right':[0.4,0]})
+            player.forces.update({'move_right':[0.8,0]})
         else:
-            player.forces.update({'move_right':[0.2,0]})
+            player.forces.update({'move_right':[0.4,0]})
     else:
         if 'move_right' in player.forces:
             player.forces.pop('move_right')
     if keys[K_a]:
         if player.touching_ground:
-            player.forces.update({'move_left':[-0.4,0]})
+            player.forces.update({'move_left':[-0.8,0]})
         else:
-            player.forces.update({'move_left':[-0.2,0]})
+            player.forces.update({'move_left':[-0.4,0]})
     else:
         if 'move_left' in player.forces:
             player.forces.pop('move_left')
@@ -198,7 +203,7 @@ def Move_Player(keys):
             player.forces.pop('normal')
     else:
         player.vel[1] = 0
-        player.forces.update({'normal':[0,0.2]})
+        player.forces.update({'normal':[0,0.4]})
 
 
 # GAME LOOP
@@ -208,15 +213,15 @@ tiles = []
 tile_hitboxes = []
 
 # OBJECTS
+font = pygame.font.Font('assets/fonts/dogica.ttf', 8)
 clock = pygame.time.Clock()
 level = pygame.sprite.Group()
 player = Entity('player', [100,400])
 entities = pygame.sprite.Group()
 entities.add(player)
 Generate_Tiles()
-player.forces.update({"gravity":[0,-0.2]})
-font = pygame.font.Font('assets/fonts/dogica.ttf', 8)
-text = font.render(f'{title} - {stage} {version}', True, (38,38,38), (255,255,255))
+player.forces.update({"gravity":[0,-0.4]})
+text = font.render(f'{title} - {version} ({stage})', True, (38,38,38), (255,255,255))
 
 running = True
 
@@ -232,7 +237,7 @@ while running:
             if event.key == pygame.K_SPACE and player.jump < 2:
                 player.jump += 1
                 player.vel[1] = 0
-                player.forces.update({'jump':[0,4]})
+                player.forces.update({'jump':[0,8]})
 
     # INPUT
     Move_Player(keys)
