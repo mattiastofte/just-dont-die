@@ -14,10 +14,12 @@ class Animation():
         while True:
             count = 0
             try:
-                self.frames.append(pygame.image.load(''))
+                self.frames.append(pygame.image.load(f'{path}{count}.png'))
             except:
                 break
-
+        
+        for frame in self.frames:
+            pygame.transform.scale(frame, (frame.get_width()*2,frame.get_height()*2))
 
 def Generate_Empty_Map(name):
     with open(f'data/{name}.csv', 'w', newline='') as csv_file:

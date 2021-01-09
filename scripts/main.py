@@ -27,9 +27,9 @@ display = pygame.display.set_mode((graphics_width, graphics_height), flags, vsyn
 pygame.display.set_caption(f"{title} - {version} ({stage})")
 icon = pygame.image.load("assets/icons/game_icon.png")
 pygame.display.set_icon(icon)
-Runaway = pygame.mixer.Sound('assets/sounds/music/Runway.mp3')
-Runaway.set_volume(0.1)
-Runaway.play()
+#Runaway = pygame.mixer.Sound('assets/sounds/music/Runway.mp3')
+#Runaway.set_volume(0.1)
+#Runaway.play()
 
 # LOAD ASSETS
 tile_images = Load_Tile_Assets()
@@ -38,35 +38,33 @@ tile_images = Load_Tile_Assets()
 sign = lambda x: math.copysign(1, x) 
  
 class Entity(pygame.sprite.Sprite):
-    def __init__(self, name, pos, forces={}, vel=[0,0]):
+    def __init__(self, pos, size, show_hitbox=True, show_vectors=True, forces={}, vel=[0,0]):
         pygame.sprite.Sprite.__init__(self)
-        self.name = name
         self.pos = pos
         self.vel = vel
         self.forces = forces
-        self.state = 'idle'
-        self.animations = [pygame.image.load('assets/characters/player/idle/idle1.png'),pygame.image.load('assets/characters/player/idle/idle2.png'),pygame.image.load('assets/characters/player/idle/idle3.png'),pygame.image.load('assets/characters/player/idle/idle4.png'),pygame.image.load('assets/characters/player/idle/idle5.png'),pygame.image.load('assets/characters/player/idle/idle6.png')]
-        for frame in range(len(self.animations)):
-            self.animations[frame] = pygame.transform.scale(self.animations[frame], (self.animations[frame].get_width()*2,self.animations[frame].get_height()*2))
-        self.image = self.animations[1]
-        #self.image = pygame.image.load('assets/characters/player/green.png')
-        #self.image = pygame.transform.scale(self.image, (self.image.get_width()*2,self.image.get_height()*2))
-        self.rect = pygame.Rect(0,0,self.image.get_width(),self.image.get_height())
-        self.collisions = []
-        self.mask = pygame.mask.Mask((self.rect.width,self.rect.height),fill=True)
-        self.mask.fill()
+        self.show_vectors = show_vectors
+        self.show_hitbox = show_hitbox
+        self.rect = pygame.Rect(0,0,size[0],size[1])
+        # CREATE A ALPHA SURFACE AS IMAGE FOR BLITTING
+        self.image = Surface((self.rect.width,self.rect.height))
+        self.image.set_colorkey((0,0,0))
+        self.image.convert_alpha()
+        # CREATE A HITBOX SURFACE
+        if self.show_hitbox:
+            self.hitbox = Surface((self.rect.width,self.rect.height))
+            self.hitbox.fill((252,186,3))
+            pygame.draw.rect(self.hitbox,(0,0,0),(2,2,self.rect.width-4,self.rect.height-4))
+            self.hitbox.set_colorkey((0,0,0))
+            self.hitbox.convert_alpha()
+        #self.mask = pygame.mask.Mask((self.rect.width,self.rect.height),fill=True)
+        #self.mask.fill()
         self.touching_ground = False
-        self.show_vectors = True
-        self.jump_count_count = 0
-        self.name_tag_text = font.render(f'player 1', True, (255,255,255), (38,38,38))
-        self.name_tag = pygame.Surface((int(self.name_tag_text.get_width()+8),int(self.name_tag_text.get_height()+8)))
-        self.name_tag.fill((38, 38, 38))
-        self.name_tag.blit(self.name_tag_text,(4,4))
+        self.jump_count = 0
         self.frame_count = 1
         self.frames = 0
 
     def update(self, tile_hitboxes, time_delta):
-
         # MOVE BACK TO SPAWN
         if self.pos[1] > 2000:
             self.pos[0] = 100
@@ -87,13 +85,7 @@ class Entity(pygame.sprite.Sprite):
             #force_vector = np.array([(self.x-entity.x),-1*(self.y-entity.y)])
         if 'jump' in player.forces:
             player.forces.pop('jump')
-        if self.frame_count > 4:
-            self.frame_count = 0
-        if self.frames > 10:
-            self.frames = 0
-            self.frame_count += 1
-        self.frames += 1
-        self.image = self.animations[self.frame_count]
+
         # UPDATE POS WITH CAMERA
         self.rect.right = self.pos[0] - camera[0]
         self.rect.bottom = self.pos[1] - camera[1]
@@ -131,13 +123,32 @@ class Entity(pygame.sprite.Sprite):
                     self.touching_ground = True
             self.rect.bottom = int(self.pos[1]) - camera[1] 
 
-        # RENDER NAMETAG
-        display.blit(self.name_tag,(player.pos[0]-camera[0]+4,player.pos[1]-camera[1]+4))
+        # RENDER HITBOX
+        if self.show_hitbox:
+            display.blit(self.hitbox,(self.pos[0]-camera[0]-self.rect.width,self.pos[1]-camera[1]-self.rect.height))
 
         # DRAW VECTORS
         if self.show_vectors:
             for force in self.forces:
                 pygame.draw.line(display, (255,0,0), [self.pos[0]-camera[0],self.pos[1]-camera[1]], [self.pos[0]+(self.forces[force][0]*100)-camera[0],self.pos[1]-(self.forces[force][1]*100)-camera[1]],2)
+
+class Player(Entity):
+    def __init__(self, name, pos, size, forces={}, vel=[0,0]):
+        self.name = name
+        self.state = 'idle'
+        super().__init__(pos, size, forces={}, vel=[0,0])
+        self.image = pygame.image.load('assets/characters/player/idle/idle1.png')
+        self.image = pygame.transform.scale(self.image,(self.image.get_width()*2,self.image.get_height()*2))
+        self.name_tag_text = font.render(f'player 1', True, (255,255,255), (38,38,38))
+        self.name_tag = pygame.Surface((int(self.name_tag_text.get_width()+8),int(self.name_tag_text.get_height()+8)))
+        self.name_tag.fill((38, 38, 38))
+        self.name_tag.blit(self.name_tag_text,(4,4))
+
+    def update(self, tile_hitboxes, time_delta):
+        super().update(tile_hitboxes,time_delta)
+
+        # NAMETAG RENDERING
+        display.blit(self.name_tag,(player.pos[0]-camera[0]+4,player.pos[1]-camera[1]+4))
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, pos, asset):
@@ -145,6 +156,10 @@ class Tile(pygame.sprite.Sprite):
         self.pos = pos
         self.image = asset
         self.rect = self.image.get_rect()
+        self.name_tag_text = font.render(f'player 1', True, (255,255,255), (38,38,38))
+        self.name_tag = pygame.Surface((int(self.name_tag_text.get_width()+8),int(self.name_tag_text.get_height()+8)))
+        self.name_tag.fill((38, 38, 38))
+        self.name_tag.blit(self.name_tag_text,(4,4))
 
     def update(self):
         self.rect.center = [self.pos[0]-camera[0],self.pos[1]-camera[1]]
@@ -239,7 +254,9 @@ tile_hitboxes = []
 font = pygame.font.Font('assets/fonts/dogica.ttf', 8)
 clock = pygame.time.Clock()
 level = pygame.sprite.Group()
-player = Entity('player', [100,400])
+#player = Entity([100,400], [20,20])
+player = Player('player', [100,400], [20,40])
+idle_animation = Animation('idle','assets/characters/player/idle/idle',10)
 #player_2 = Entity('player_2', [100,400])
 entities = pygame.sprite.Group()
 entities.add(player)
