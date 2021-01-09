@@ -6,12 +6,18 @@ import csv
 
 [100,100,100,100,100,100,100]
 
-def Animation(path,frame_lengths):
-    frames = []
-    for i in range(len(frame_lenghts)):
-        pass
-    #    frames.append((pygame.image.load(f'{path}_{i}.png',frame_lengths[i]))
-    return frames
+
+class Animation():
+    def __init__(self, name, path, speed):
+        self.frames = []
+        self.frame_length = speed
+        while True:
+            count = 0
+            try:
+                self.frames.append(pygame.image.load(''))
+            except:
+                break
+
 
 def Generate_Empty_Map(name):
     with open(f'data/{name}.csv', 'w', newline='') as csv_file:
@@ -28,6 +34,7 @@ def Load_Tile_Assets():
     for tile in tile_images:
         tile_images.update({tile:pygame.transform.scale(tile_images[tile], [16,16])})
     return tile_images
+
 #def Generate_Map(name):
 #    map_surface = pygame.Surface((1028,1028), pygame.SRCALPHA, 32)
 #    map_surface.convert_alpha()

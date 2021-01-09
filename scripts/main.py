@@ -27,13 +27,16 @@ display = pygame.display.set_mode((graphics_width, graphics_height), flags, vsyn
 pygame.display.set_caption(f"{title} - {version} ({stage})")
 icon = pygame.image.load("assets/icons/game_icon.png")
 pygame.display.set_icon(icon)
+Runaway = pygame.mixer.Sound('assets/sounds/music/Runway.mp3')
+Runaway.set_volume(0.1)
+Runaway.play()
 
 # LOAD ASSETS
 tile_images = Load_Tile_Assets()
 
 # FUNCTIONS
 sign = lambda x: math.copysign(1, x) 
-
+ 
 class Entity(pygame.sprite.Sprite):
     def __init__(self, name, pos, forces={}, vel=[0,0]):
         pygame.sprite.Sprite.__init__(self)
@@ -41,26 +44,41 @@ class Entity(pygame.sprite.Sprite):
         self.pos = pos
         self.vel = vel
         self.forces = forces
-        self.image = pygame.image.load('assets/characters/player/green.png')
-        self.image = pygame.transform.scale(self.image, (self.image.get_width()*2,self.image.get_height()*2))
-        self.rect = self.image.get_rect()
+        self.state = 'idle'
+        self.animations = [pygame.image.load('assets/characters/player/idle/idle1.png'),pygame.image.load('assets/characters/player/idle/idle2.png'),pygame.image.load('assets/characters/player/idle/idle3.png'),pygame.image.load('assets/characters/player/idle/idle4.png'),pygame.image.load('assets/characters/player/idle/idle5.png'),pygame.image.load('assets/characters/player/idle/idle6.png')]
+        for frame in range(len(self.animations)):
+            self.animations[frame] = pygame.transform.scale(self.animations[frame], (self.animations[frame].get_width()*2,self.animations[frame].get_height()*2))
+        self.image = self.animations[1]
+        #self.image = pygame.image.load('assets/characters/player/green.png')
+        #self.image = pygame.transform.scale(self.image, (self.image.get_width()*2,self.image.get_height()*2))
+        self.rect = pygame.Rect(0,0,self.image.get_width(),self.image.get_height())
         self.collisions = []
         self.mask = pygame.mask.Mask((self.rect.width,self.rect.height),fill=True)
         self.mask.fill()
         self.touching_ground = False
         self.show_vectors = True
-        self.jump = 0
-        self.name_tag_text = font.render(f'madiasu', True, (255,255,255), (38,38,38))
+        self.jump_count_count = 0
+        self.name_tag_text = font.render(f'player 1', True, (255,255,255), (38,38,38))
         self.name_tag = pygame.Surface((int(self.name_tag_text.get_width()+8),int(self.name_tag_text.get_height()+8)))
+        self.name_tag.fill((38, 38, 38))
         self.name_tag.blit(self.name_tag_text,(4,4))
+        self.frame_count = 1
+        self.frames = 0
 
     def update(self, tile_hitboxes, time_delta):
+
+        # MOVE BACK TO SPAWN
+        if self.pos[1] > 2000:
+            self.pos[0] = 100
+            self.pos[1] = 400
+            self.vel[0] = 0
+            self.vel[1] = 1
 
         # FRICTION
         if player.touching_ground:
             self.forces.update({'friction':[-1*(self.vel[0]/10),0]})
         else:
-            self.forces.update({'friction':[-1*(self.vel[0]/20),0]})
+            self.forces.update({'friction':[-1*(self.vel[0]/10),0]})
 
         # ITTARATE TROUGH FORCES
         for force in self.forces:
@@ -69,7 +87,13 @@ class Entity(pygame.sprite.Sprite):
             #force_vector = np.array([(self.x-entity.x),-1*(self.y-entity.y)])
         if 'jump' in player.forces:
             player.forces.pop('jump')
-
+        if self.frame_count > 4:
+            self.frame_count = 0
+        if self.frames > 10:
+            self.frames = 0
+            self.frame_count += 1
+        self.frames += 1
+        self.image = self.animations[self.frame_count]
         # UPDATE POS WITH CAMERA
         self.rect.right = self.pos[0] - camera[0]
         self.rect.bottom = self.pos[1] - camera[1]
@@ -103,7 +127,7 @@ class Entity(pygame.sprite.Sprite):
             self.rect.bottom = int(self.pos[1]) - camera[1] + 1
             for hitbox in tile_hitboxes:
                 if self.rect.colliderect(hitbox): 
-                    player.jump = 0
+                    player.jump_count = 0
                     self.touching_ground = True
             self.rect.bottom = int(self.pos[1]) - camera[1] 
 
@@ -114,7 +138,6 @@ class Entity(pygame.sprite.Sprite):
         if self.show_vectors:
             for force in self.forces:
                 pygame.draw.line(display, (255,0,0), [self.pos[0]-camera[0],self.pos[1]-camera[1]], [self.pos[0]+(self.forces[force][0]*100)-camera[0],self.pos[1]-(self.forces[force][1]*100)-camera[1]],2)
-        
 
 class Tile(pygame.sprite.Sprite):
     def __init__(self, pos, asset):
@@ -217,10 +240,13 @@ font = pygame.font.Font('assets/fonts/dogica.ttf', 8)
 clock = pygame.time.Clock()
 level = pygame.sprite.Group()
 player = Entity('player', [100,400])
+#player_2 = Entity('player_2', [100,400])
 entities = pygame.sprite.Group()
 entities.add(player)
+#entities.add(player_2)
 Generate_Tiles()
 player.forces.update({"gravity":[0,-0.4]})
+#player_2.forces.update({"gravity":[0,-0.4]})
 text = font.render(f'{title} - {version} ({stage})', True, (38,38,38), (255,255,255))
 
 running = True
@@ -234,10 +260,13 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE and player.jump < 2:
-                player.jump += 1
+            if event.key == pygame.K_SPACE and player.jump_count < 2:
+                player.jump_count += 1
                 player.vel[1] = 0
                 player.forces.update({'jump':[0,8]})
+            if event.key == pygame.K_h:
+                player.forces.update({'explode':[0.2,0]})
+
 
     # INPUT
     Move_Player(keys)
@@ -252,12 +281,13 @@ while running:
     Render_Tiles(tiles)
     entities.update(tile_hitboxes,time_delta)
     entities.draw(display) 
+    fps_text = font.render((f'fps: {round(clock.get_fps(),2)}'), True, (38,38,38), (255,255,255))
+    display.blit(fps_text,(550,2))
 
     # SCREEN UPDATE
     pygame.display.flip()
 
     # FPS CAP
-    print(clock.get_fps())
     clock.tick(60)
     
 pygame.quit()
