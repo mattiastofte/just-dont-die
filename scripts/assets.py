@@ -3,36 +3,46 @@ from pygame.locals import *
 from pygame import *
 import csv
 
-
-[100,100,100,100,100,100,100]
-
-
 class Animation():
     def __init__(self, name, path, frame_length, offset):
         self.frames = []
+        self.frames_flipped = []
         self.frame_length = frame_length
         self.offset = offset
+        self.number_of_frames = 0
         while True:
-            count = 0
             try:
-                self.frames.append(pygame.image.load(f'{path}{count}.png'))
+                self.frames.append(pygame.image.load(f'{path}{self.number_of_frames+1}.png'))
+                self.number_of_frames += 1
             except:
                 break
         
-        for frame in self.frames:
-            pygame.transform.scale(frame, (frame.get_width()*2,frame.get_height()*2))
+        for frame in range(self.number_of_frames):
+            self.frames[frame] = pygame.transform.scale(self.frames[frame], (self.frames[frame].get_width()*2,self.frames[frame].get_height()*2))
+            self.frames_flipped.append(pygame.transform.flip(self.frames[frame], True, False))
+        
+        self.number_of_frames = len(self.frames)
+        print(f'[GAME] Loaded {self.number_of_frames} frames for animation: {name}')
 
-def Change_Animation(entity, animation):
-    entity.frame_count = 1
+def Change_Animation(entity, animation, flipped=False):
+    entity.frame_count = 0
     entity.animation = animation
-    entity.offset = animation.offset
+    entity.flipped = flipped
 
 def Swap_Frame(entity):
-    try:
-        entity.image = entity.animation.frames[entity.frame_number]
-    except:
-        entity.frame_count = 1
-        entity.image = entity.animation.frames[entity.frame_number]
+    entity.offset = entity.animation.offset
+    if entity.flipped:
+        try:
+            entity.image = entity.animation.frames_flipped[entity.frame_count]
+        except:
+            entity.frame_count = 0
+            entity.image = entity.animation.frames_flipped[entity.frame_count]
+    else:
+        try:
+            entity.image = entity.animation.frames[entity.frame_count]
+        except:
+            entity.frame_count = 0
+            entity.image = entity.animation.frames[entity.frame_count]
     
 def Generate_Empty_Map(name):
     with open(f'data/{name}.csv', 'w', newline='') as csv_file:

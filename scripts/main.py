@@ -28,9 +28,9 @@ display = pygame.display.set_mode((graphics_width, graphics_height), flags, vsyn
 pygame.display.set_caption(f"{title} - {version} ({stage})")
 icon = pygame.image.load("assets/icons/game_icon.png")
 pygame.display.set_icon(icon)
-#Runaway = pygame.mixer.Sound('assets/sounds/music/Runway.mp3')
-#Runaway.set_volume(0.1)
-#Runaway.play()
+Runaway = pygame.mixer.Sound('assets/sounds/music/Runway.mp3')
+Runaway.set_volume(0.1)
+Runaway.play()
 
 # LOAD ASSETS
 tile_images = Load_Tile_Assets()
@@ -50,6 +50,10 @@ class Entity(modified_sprite.Sprite):
         self.show_vectors = show_vectors
         self.show_hitbox = show_hitbox
         self.rect = pygame.Rect(0,0,size[0],size[1])
+        # ANIMATION VARIABLES
+        self.frame_count = 0
+        self.frame_time_lapsed = pygame.time.get_ticks()
+        self.flipped = False
         # CREATE A ALPHA SURFACE AS IMAGE FOR BLITTING
         self.image = Surface((self.rect.width,self.rect.height))
         self.image.set_colorkey((0,0,0))
@@ -61,6 +65,7 @@ class Entity(modified_sprite.Sprite):
             pygame.draw.rect(self.hitbox,(0,0,0),(2,2,self.rect.width-4,self.rect.height-4))
             self.hitbox.set_colorkey((0,0,0))
             self.hitbox.convert_alpha()
+        # CREATE MASK OFF ENTITY
         #self.mask = pygame.mask.Mask((self.rect.width,self.rect.height),fill=True)
         #self.mask.fill()
         self.touching_ground = False
@@ -125,6 +130,14 @@ class Entity(modified_sprite.Sprite):
                     self.touching_ground = True
             self.rect.bottom = int(self.pos[1]) - camera[1] 
 
+        # FORCE NORMAL
+        if self.touching_ground == False:
+            if 'normal' in self.forces:
+                self.forces.pop('normal')
+        else:
+            self.vel[1] = 0
+            self.forces.update({'normal':[0,0.4]})
+
         # RENDER HITBOX
         if self.show_hitbox:
             display.blit(self.hitbox,(self.pos[0]-camera[0]-self.rect.width,self.pos[1]-camera[1]-self.rect.height))
@@ -139,11 +152,12 @@ class Player(Entity):
         self.name = name
         self.state = 'idle'
         self.jump_count = 0
+        self.animation = idle_animation
         super().__init__(pos, size, show_hitbox, show_vectors, forces={}, vel=[0,0])
         self.image = pygame.image.load('assets/characters/player/idle/idle1.png')
         self.image = pygame.transform.scale(self.image,(self.image.get_width()*2,self.image.get_height()*2))
-        self.name_tag_text = font.render(f'player 1', True, (255,255,255), (38,38,38))
-        self.name_tag = pygame.Surface((int(self.name_tag_text.get_width()+8),int(self.name_tag_text.get_height()+8)))
+        self.name_tag_text = font.render(f'{self.name}', True, (255,255,255), (38,38,38))
+        self.name_tag = pygame.Surface((int(self.name_tag_text.get_width()+8),16))
         self.name_tag.fill((38, 38, 38))
         self.name_tag.blit(self.name_tag_text,(4,4))
         self.offset = [0,0]
@@ -151,8 +165,17 @@ class Player(Entity):
     def update(self, tile_hitboxes, time_delta):
         super().update(tile_hitboxes,time_delta)
 
+        self.current_tick = pygame.time.get_ticks()
+        if self.current_tick-self.frame_time_lapsed > self.animation.frame_length:
+            if self.frame_count > self.animation.number_of_frames:
+                self.frame_count = 0
+            else:
+                self.frame_count += 1
+            self.frame_time_lapsed = self.current_tick
+            Swap_Frame(self)
+        
         # NAMETAG RENDERING
-        display.blit(self.name_tag,(player.pos[0]-camera[0]+2,player.pos[1]-camera[1]+2))
+        display.blit(self.name_tag,(self.pos[0]-camera[0]+2,self.pos[1]-camera[1]+2))
 
 class Tile(modified_sprite.Sprite):
     def __init__(self, pos, asset):
@@ -164,16 +187,6 @@ class Tile(modified_sprite.Sprite):
     def update(self):
         self.rect.center = [self.pos[0]-camera[0],self.pos[1]-camera[1]]
         display.blit(self.image,(self.rect.x,self.rect.y))
-
-#class Map(pygame.sprite.Sprite):
-#    def __init__(self,map):
-#        pygame.sprite.Sprite.__init__(self)
-#        self.image = Generate_Map(map)
-#        self.rect = self.image.get_rect()
-#        self.mask = pygame.mask.from_surface(self.image)
-#
-#    def update(self):
-#        self.rect.center = [camera[0],camera[1]]
 
 def Generate_Tiles():
     delta = [0,0]
@@ -194,10 +207,10 @@ def Render_Tiles(tiles):
     global tile_hitboxes
     tile_hitboxes = []
     for tile in tiles:
-        #if tile.pos[0]-camera[0]>10 and tile.pos[0]-camera[0]<300:
-        #    if tile.pos[1]+camera[1]>10 and tile.pos[1]+camera[1]<170:
-        tile.update()
-        tile_hitboxes.append(tile.rect)
+        if tile.pos[0]-camera[0]>-50 and tile.pos[0]-camera[0]<750:
+            if tile.pos[1]-camera[1]>-50 and tile.pos[1]-camera[1]<400:
+                tile.update()
+                tile_hitboxes.append(tile.rect)
         
 
 def get_time_delta():
@@ -236,12 +249,6 @@ def Move_Player(keys):
     else:
         if 'move_left' in player.forces:
             player.forces.pop('move_left')
-    if player.touching_ground == False:
-        if 'normal' in player.forces:
-            player.forces.pop('normal')
-    else:
-        player.vel[1] = 0
-        player.forces.update({'normal':[0,0.4]})
 
 
 # GAME LOOP
@@ -250,25 +257,34 @@ def Move_Player(keys):
 tiles = []
 tile_hitboxes = []
 
+# ANIMATIONS
+idle_animation = Animation('idle','assets/characters/player/idle/idle',100,[0,0])
+running_animation = Animation('run','assets/characters/player/run/run',100,[-20,-4])
+
 # OBJECTS
 font = pygame.font.Font('assets/fonts/dogica.ttf', 8)
 clock = pygame.time.Clock()
 level = modified_sprite.Group()
 #player = Entity([100,400], [20,20])
-player = Player('player', [100,400], [28,56], True, True)
+player = Player('madiasu', [100,400], [28,56], False, False)
+player2 = Player('SaiYue', [200,400], [28,56], False, False)
+player3 = Player('Largosof', [300,400], [28,56], False, False)
 #player_2 = Entity('player_2', [100,400])
 entities = modified_sprite.Group()
 entities.add(player)
-#entities.add(player_2)
+entities.add(player2)
+entities.add(player3)
 Generate_Tiles()
 player.forces.update({"gravity":[0,-0.4]})
+player2.forces.update({"gravity":[0,-0.4]})
+player3.forces.update({"gravity":[0,-0.4]})
+
 #player_2.forces.update({"gravity":[0,-0.4]})
 text = font.render(f'{title} - {version} ({stage})', True, (38,38,38), (255,255,255))
 
-# ANIMATIONS
-idle_animation = Animation('idle','assets/characters/player/idle/idle',10,[10,10])
-
 running = True
+
+Change_Animation(player, idle_animation)
 
 while running:
     time_delta = get_time_delta()
@@ -283,8 +299,17 @@ while running:
                 player.jump_count += 1
                 player.vel[1] = 0
                 player.forces.update({'jump':[0,8]})
-            if event.key == pygame.K_h:
-                player.forces.update({'explode':[0.2,0]})
+            if event.key == pygame.K_d:
+                Change_Animation(player, running_animation, False)
+            if event.key == pygame.K_a:
+                Change_Animation(player, running_animation, True)
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_a or event.key == pygame.K_d:
+                if not (keys[K_d] and keys[K_a]):
+                    Change_Animation(player, idle_animation, True)
+                    
+
+
 
 
     # INPUT
