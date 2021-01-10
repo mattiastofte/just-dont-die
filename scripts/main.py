@@ -15,7 +15,7 @@ pygame.init()
 
 # STATIC INIT VARIABLES
 monitor = pygame.display.Info()
-version = "1.0.5"
+version = "1.0.6"
 title = "just don't die!"
 stage = "alpha"
 graphics_width = 640
