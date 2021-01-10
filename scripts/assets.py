@@ -8,9 +8,10 @@ import csv
 
 
 class Animation():
-    def __init__(self, name, path, speed):
+    def __init__(self, name, path, frame_length, offset):
         self.frames = []
-        self.frame_length = speed
+        self.frame_length = frame_length
+        self.offset = offset
         while True:
             count = 0
             try:
@@ -21,6 +22,18 @@ class Animation():
         for frame in self.frames:
             pygame.transform.scale(frame, (frame.get_width()*2,frame.get_height()*2))
 
+def Change_Animation(entity, animation):
+    entity.frame_count = 1
+    entity.animation = animation
+    entity.offset = animation.offset
+
+def Swap_Frame(entity):
+    try:
+        entity.image = entity.animation.frames[entity.frame_number]
+    except:
+        entity.frame_count = 1
+        entity.image = entity.animation.frames[entity.frame_number]
+    
 def Generate_Empty_Map(name):
     with open(f'data/{name}.csv', 'w', newline='') as csv_file:
         empty_row = []

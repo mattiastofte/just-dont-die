@@ -2,6 +2,7 @@
 import pygame
 from pygame.locals import *
 from pygame import *
+import modified_sprite
 import os
 import math 
 import random
@@ -37,10 +38,13 @@ tile_images = Load_Tile_Assets()
 # FUNCTIONS
 sign = lambda x: math.copysign(1, x) 
  
-class Entity(pygame.sprite.Sprite):
+# MODIFIED GROUP CLASS
+
+class Entity(modified_sprite.Sprite):
     def __init__(self, pos, size, show_hitbox=True, show_vectors=True, forces={}, vel=[0,0]):
         pygame.sprite.Sprite.__init__(self)
         self.pos = pos
+        self.offset = [0,0]
         self.vel = vel
         self.forces = forces
         self.show_vectors = show_vectors
@@ -60,9 +64,7 @@ class Entity(pygame.sprite.Sprite):
         #self.mask = pygame.mask.Mask((self.rect.width,self.rect.height),fill=True)
         #self.mask.fill()
         self.touching_ground = False
-        self.jump_count = 0
-        self.frame_count = 1
-        self.frames = 0
+
 
     def update(self, tile_hitboxes, time_delta):
         # MOVE BACK TO SPAWN
@@ -133,33 +135,31 @@ class Entity(pygame.sprite.Sprite):
                 pygame.draw.line(display, (255,0,0), [self.pos[0]-camera[0],self.pos[1]-camera[1]], [self.pos[0]+(self.forces[force][0]*100)-camera[0],self.pos[1]-(self.forces[force][1]*100)-camera[1]],2)
 
 class Player(Entity):
-    def __init__(self, name, pos, size, forces={}, vel=[0,0]):
+    def __init__(self, name, pos, size, show_hitbox=True, show_vectors=True, forces={}, vel=[0,0]):
         self.name = name
         self.state = 'idle'
-        super().__init__(pos, size, forces={}, vel=[0,0])
+        self.jump_count = 0
+        super().__init__(pos, size, show_hitbox, show_vectors, forces={}, vel=[0,0])
         self.image = pygame.image.load('assets/characters/player/idle/idle1.png')
         self.image = pygame.transform.scale(self.image,(self.image.get_width()*2,self.image.get_height()*2))
         self.name_tag_text = font.render(f'player 1', True, (255,255,255), (38,38,38))
         self.name_tag = pygame.Surface((int(self.name_tag_text.get_width()+8),int(self.name_tag_text.get_height()+8)))
         self.name_tag.fill((38, 38, 38))
         self.name_tag.blit(self.name_tag_text,(4,4))
+        self.offset = [0,0]
 
     def update(self, tile_hitboxes, time_delta):
         super().update(tile_hitboxes,time_delta)
 
         # NAMETAG RENDERING
-        display.blit(self.name_tag,(player.pos[0]-camera[0]+4,player.pos[1]-camera[1]+4))
+        display.blit(self.name_tag,(player.pos[0]-camera[0]+2,player.pos[1]-camera[1]+2))
 
-class Tile(pygame.sprite.Sprite):
+class Tile(modified_sprite.Sprite):
     def __init__(self, pos, asset):
         pygame.sprite.Sprite.__init__(self)
         self.pos = pos
         self.image = asset
         self.rect = self.image.get_rect()
-        self.name_tag_text = font.render(f'player 1', True, (255,255,255), (38,38,38))
-        self.name_tag = pygame.Surface((int(self.name_tag_text.get_width()+8),int(self.name_tag_text.get_height()+8)))
-        self.name_tag.fill((38, 38, 38))
-        self.name_tag.blit(self.name_tag_text,(4,4))
 
     def update(self):
         self.rect.center = [self.pos[0]-camera[0],self.pos[1]-camera[1]]
@@ -253,18 +253,20 @@ tile_hitboxes = []
 # OBJECTS
 font = pygame.font.Font('assets/fonts/dogica.ttf', 8)
 clock = pygame.time.Clock()
-level = pygame.sprite.Group()
+level = modified_sprite.Group()
 #player = Entity([100,400], [20,20])
-player = Player('player', [100,400], [20,40])
-idle_animation = Animation('idle','assets/characters/player/idle/idle',10)
+player = Player('player', [100,400], [28,56], True, True)
 #player_2 = Entity('player_2', [100,400])
-entities = pygame.sprite.Group()
+entities = modified_sprite.Group()
 entities.add(player)
 #entities.add(player_2)
 Generate_Tiles()
 player.forces.update({"gravity":[0,-0.4]})
 #player_2.forces.update({"gravity":[0,-0.4]})
 text = font.render(f'{title} - {version} ({stage})', True, (38,38,38), (255,255,255))
+
+# ANIMATIONS
+idle_animation = Animation('idle','assets/characters/player/idle/idle',10,[10,10])
 
 running = True
 
