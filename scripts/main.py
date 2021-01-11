@@ -41,10 +41,11 @@ sign = lambda x: math.copysign(1, x)
 # MODIFIED GROUP CLASS
 
 class Entity(modified_sprite.Sprite):
-    def __init__(self, pos, size, show_hitbox=True, show_vectors=True, forces={}, vel=[0,0]):
+    def __init__(self, pos, size, physics=True, show_hitbox=True, show_vectors=True, forces={}, vel=[0,0]):
         pygame.sprite.Sprite.__init__(self)
         self.pos = pos
         self.offset = [0,0]
+        self.phyics = physics
         self.vel = vel
         self.forces = forces
         self.show_vectors = show_vectors
@@ -315,7 +316,6 @@ while running:
     # INPUT
     Move_Player(keys)
     Follow_Camera(player)
-    Floor_Camera()
 
     #Move_Camera(keys)
 

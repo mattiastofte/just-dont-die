@@ -17,10 +17,12 @@ camera_pos = [0,400]
 def Update_Camera_Pos(pos):
     camera_pos[0] = pos[0]
     camera_pos[1] = pos[1]
+    Floor_Camera()
 
 def Scroll_Camera_Pos(delta):
     camera_pos[0] += delta[0]
     camera_pos[1] += delta[1]
+    Floor_Camera()
 
 def Floor_Camera():
     camera[0] = int(camera_pos[0])
