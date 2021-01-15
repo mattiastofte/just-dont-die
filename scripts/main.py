@@ -41,7 +41,7 @@ tile_images = Load_Tile_Assets()
 
 # FUNCTIONS
 #sign = lambda x: math.copysign(1, x) 
- 
+
 # MODIFIED GROUP CLASS
 class Entity(modified_sprite.Sprite):
     def __init__(self, pos, size, **properties):
@@ -171,8 +171,7 @@ class Player(Entity):
         self.jump_count = 0
         self.animation = idle_animation
         super().__init__(pos, size, **properties)
-        self.image = pygame.image.load('assets/characters/player/idle/idle1.png')
-        self.image = pygame.transform.scale(self.image,(self.image.get_width()*2,self.image.get_height()*2))
+        self.image = pygame.Surface((0,0))
         self.name_tag_text = font.render(f'{self.name}', True, (255,255,255), (38,38,38))
         self.name_tag = pygame.Surface((int(self.name_tag_text.get_width()+8),16))
         self.name_tag.fill((38, 38, 38))
@@ -228,7 +227,6 @@ def Render_Tiles(tiles):
                 tile.update()
                 tile_hitboxes.append(tile.rect)
         
-
 def get_time_delta():
     return clock.get_fps()/fps
 
@@ -246,7 +244,6 @@ def Move_Camera(keys):
 
 def Follow_Camera(entity):
     Scroll_Camera_Pos(((entity.pos[0]-camera_pos[0]-310)/10,(entity.pos[1]-camera_pos[1]-200)/10))
-
 
 def Move_Player(keys):
     if keys[K_d]:
@@ -294,7 +291,6 @@ player.forces.update({"gravity":[0, -0.4, False]})
 player2.forces.update({"gravity":[0, -0.4, False]})
 player3.forces.update({"gravity":[0, -0.4, False]})
 text = font.render(f'{title} - {version} ({stage})', True, (38,38,38), (255,255,255))
-
 
 # GAME LOOP
 running = True
