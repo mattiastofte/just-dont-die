@@ -21,7 +21,7 @@ def start():
 
 print(f'just dont die!')
 print("━━━━━━━━━━━━━━━━━━━━━━━━\n")
-print(f"\n[Server] Socket created succesfully. Starting server.")
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+print(f"\n[Server] Socket created succesfully. Starting server.")
 server.bind(ADDR)
 start()
