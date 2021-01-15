@@ -1,6 +1,7 @@
 import pygame
 from pygame.locals import *
 from pygame import *
+import modified_sprite
 import csv
 
 class Animation():
@@ -24,6 +25,10 @@ class Animation():
         self.number_of_frames = len(self.frames)
         print(f'[GAME] Loaded {self.number_of_frames} frames for animation: {name}')
 
+class Background(modified_sprite.Sprite):
+    def __init__(self, path, offset):
+        self.image = pygame.image.load(path)
+    
 def Change_Animation(entity, animation, flipped=False):
     entity.frame_count = 0
     entity.animation = animation

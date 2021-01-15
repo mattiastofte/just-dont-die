@@ -318,16 +318,10 @@ while running:
                 if not (keys[K_d] and keys[K_a]):
                     Change_Animation(player, idle_animation, True)
                     
-
-
-
-
     # INPUT
     Move_Player(keys)
     Follow_Camera(player)
-
-    #Move_Camera(keys)
-
+    
     # RENDERING
     display.fill((255,255,255))
     display.blit(text,(2,2))
