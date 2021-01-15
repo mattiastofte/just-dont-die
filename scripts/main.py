@@ -6,6 +6,7 @@ import modified_sprite
 import os
 import math 
 import random
+import pickle
 
 # IMPORT SCRIPTS
 from rendering import *
@@ -294,8 +295,9 @@ player2.forces.update({"gravity":[0, -0.4, False]})
 player3.forces.update({"gravity":[0, -0.4, False]})
 text = font.render(f'{title} - {version} ({stage})', True, (38,38,38), (255,255,255))
 
-running = True
 
+# GAME LOOP
+running = True
 while running:
     time_delta = get_time_delta()
     keys = pygame.key.get_pressed()
@@ -321,7 +323,7 @@ while running:
     # INPUT
     Move_Player(keys)
     Follow_Camera(player)
-    
+
     # RENDERING
     display.fill((255,255,255))
     display.blit(text,(2,2))
