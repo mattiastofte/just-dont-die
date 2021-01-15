@@ -10,6 +10,7 @@ import random
 # IMPORT SCRIPTS
 from rendering import *
 from assets import *
+from user_interface import *
 
 pygame.init()
 
@@ -28,29 +29,31 @@ display = pygame.display.set_mode((graphics_width, graphics_height), flags, vsyn
 pygame.display.set_caption(f"{title} - {version} ({stage})")
 icon = pygame.image.load("assets/icons/game_icon.png")
 pygame.display.set_icon(icon)
-Runaway = pygame.mixer.Sound('assets/sounds/music/Runway.mp3')
-Runaway.set_volume(0.1)
-Runaway.play()
+
+# MUSIC
+#Runaway = pygame.mixer.Sound('assets/sounds/music/Runway.mp3')
+#Runaway.set_volume(0.1)
+#Runaway.play()
 
 # LOAD ASSETS
 tile_images = Load_Tile_Assets()
 
 # FUNCTIONS
-sign = lambda x: math.copysign(1, x) 
+#sign = lambda x: math.copysign(1, x) 
  
 # MODIFIED GROUP CLASS
-
 class Entity(modified_sprite.Sprite):
-    def __init__(self, pos, size, physics=True, show_hitbox=True, show_vectors=True, forces={}, vel=[0,0]):
+    def __init__(self, pos, size, **properties):
         pygame.sprite.Sprite.__init__(self)
         self.pos = pos
         self.offset = [0,0]
-        self.phyics = physics
-        self.vel = vel
-        self.forces = forces
-        self.show_vectors = show_vectors
-        self.show_hitbox = show_hitbox
+        self.vel = [0,0]
+        self.forces = {}
+        self.show_vectors = False
+        self.show_hitbox = False
         self.rect = pygame.Rect(0,0,size[0],size[1])
+        self.physics = True
+        
         # ANIMATION VARIABLES
         self.frame_count = 0
         self.frame_time_lapsed = pygame.time.get_ticks()
@@ -69,7 +72,11 @@ class Entity(modified_sprite.Sprite):
         # CREATE MASK OFF ENTITY
         #self.mask = pygame.mask.Mask((self.rect.width,self.rect.height),fill=True)
         #self.mask.fill()
-        self.touching_ground = False
+        if self.physics:
+            self.touching_ground = False
+        
+        for key, value in properties.items():
+            setattr(self, key, value)
 
 
     def update(self, tile_hitboxes, time_delta):
@@ -80,81 +87,89 @@ class Entity(modified_sprite.Sprite):
             self.vel[0] = 0
             self.vel[1] = 1
 
-        # FRICTION
-        if player.touching_ground:
-            self.forces.update({'friction':[-1*(self.vel[0]/10),0]})
-        else:
-            self.forces.update({'friction':[-1*(self.vel[0]/10),0]})
-
-        # ITTARATE TROUGH FORCES
-        for force in self.forces:
-            self.vel[0] += self.forces[force][0] * time_delta
-            self.vel[1] += self.forces[force][1] * time_delta
-            #force_vector = np.array([(self.x-entity.x),-1*(self.y-entity.y)])
-        if 'jump' in player.forces:
-            player.forces.pop('jump')
-
         # UPDATE POS WITH CAMERA
         self.rect.right = self.pos[0] - camera[0]
         self.rect.bottom = self.pos[1] - camera[1]
-        
-        # X-VECTOR MOVEMENT
-        self.pos[0] += self.vel[0]
-        self.rect.right = int(self.pos[0]) - camera[0]
-        for hitbox in tile_hitboxes:
-            if self.rect.colliderect(hitbox): 
-                if self.vel[0] > 0:
-                    self.pos[0] = hitbox.left + camera[0]
-                else:
-                    self.pos[0] = hitbox.right + self.rect.width + camera[0]
-                self.rect.right = int(self.pos[0]) - camera[0]
 
-        # Y-VECTOR MOVEMENT
-        self.pos[1] -= self.vel[1]
-        self.rect.bottom = int(self.pos[1]) - camera[1]
-        for hitbox in tile_hitboxes:
-            if self.rect.colliderect(hitbox): 
-                if self.vel[1] < 0: 
-                    self.pos[1] = int(hitbox.bottom) + camera[1] - 16
-                else:
-                    
-                    self.pos[1] = hitbox.top + self.rect.height + camera[1] + 16
-                self.rect.bottom = int(self.pos[1]) - camera[1]
+        # FRICTION
+        if self.physics:
+            if player.touching_ground:
+                self.forces.update({'friction':[-1*(self.vel[0]/10),0,False]})
+            else:
+                self.forces.update({'friction':[-1*(self.vel[0]/10),0,False]})
+
+            # ITTARATE TROUGH FORCES
+            pop_list = []
+            for key, value in self.forces.items():
+                self.vel[0] += value[0] * time_delta
+                self.vel[1] += value[1] * time_delta
+                if value[2]:
+                    pop_list.append(key)
+
+            # POP IMPULSES
+            for key in pop_list:
+                self.forces.pop(key)
         
-        # GROUND TOUCH CHECK
-        self.touching_ground = False
-        if player.vel[1] == 0 or player.vel[1] < 0:
-            self.rect.bottom = int(self.pos[1]) - camera[1] + 1
+            # X-VECTOR MOVEMENT
+            self.pos[0] += self.vel[0]
+            self.rect.right = int(self.pos[0]) - camera[0]
             for hitbox in tile_hitboxes:
                 if self.rect.colliderect(hitbox): 
-                    player.jump_count = 0
-                    self.touching_ground = True
-            self.rect.bottom = int(self.pos[1]) - camera[1] 
+                    if self.vel[0] > 0:
+                        self.pos[0] = hitbox.left + camera[0]
+                    else:
+                        self.pos[0] = hitbox.right + self.rect.width + camera[0]
+                    self.rect.right = int(self.pos[0]) - camera[0]
 
-        # FORCE NORMAL
-        if self.touching_ground == False:
-            if 'normal' in self.forces:
-                self.forces.pop('normal')
+            # Y-VECTOR MOVEMENT
+            self.pos[1] -= self.vel[1]
+            self.rect.bottom = int(self.pos[1]) - camera[1]
+            for hitbox in tile_hitboxes:
+                if self.rect.colliderect(hitbox): 
+                    if self.vel[1] < 0: 
+                        self.pos[1] = int(hitbox.bottom) + camera[1] - 16
+                    else:
+                        
+                        self.pos[1] = hitbox.top + self.rect.height + camera[1] + 16
+                    self.rect.bottom = int(self.pos[1]) - camera[1]
+            
+            # GROUND TOUCH CHECK
+            self.touching_ground = False
+            if player.vel[1] == 0 or player.vel[1] < 0:
+                self.rect.bottom = int(self.pos[1]) - camera[1] + 1
+                for hitbox in tile_hitboxes:
+                    if self.rect.colliderect(hitbox): 
+                        player.jump_count = 0
+                        self.touching_ground = True
+                self.rect.bottom = int(self.pos[1]) - camera[1] 
+
+            # FORCE NORMAL
+            if self.touching_ground == False:
+                if 'normal' in self.forces:
+                    self.forces.pop('normal')
+            else:
+                self.vel[1] = 0
+                self.forces.update({'normal':[0,0.4,False]})
+
+            # DRAW VECTORS
+            if self.show_vectors:
+                for force in self.forces:
+                    pygame.draw.line(display, (255,0,0), [self.pos[0]-camera[0],self.pos[1]-camera[1]], [self.pos[0]+(self.forces[force][0]*100)-camera[0],self.pos[1]-(self.forces[force][1]*100)-camera[1]],2)
         else:
-            self.vel[1] = 0
-            self.forces.update({'normal':[0,0.4]})
+            self.rect.bottom = int(self.pos[1]) - camera[1]
+            self.rect.right = int(self.pos[0]) - camera[0]
 
         # RENDER HITBOX
         if self.show_hitbox:
             display.blit(self.hitbox,(self.pos[0]-camera[0]-self.rect.width,self.pos[1]-camera[1]-self.rect.height))
 
-        # DRAW VECTORS
-        if self.show_vectors:
-            for force in self.forces:
-                pygame.draw.line(display, (255,0,0), [self.pos[0]-camera[0],self.pos[1]-camera[1]], [self.pos[0]+(self.forces[force][0]*100)-camera[0],self.pos[1]-(self.forces[force][1]*100)-camera[1]],2)
-
 class Player(Entity):
-    def __init__(self, name, pos, size, show_hitbox=True, show_vectors=True, forces={}, vel=[0,0]):
+    def __init__(self, name, pos, size, **properties):
         self.name = name
         self.state = 'idle'
         self.jump_count = 0
         self.animation = idle_animation
-        super().__init__(pos, size, show_hitbox, show_vectors, forces={}, vel=[0,0])
+        super().__init__(pos, size, **properties)
         self.image = pygame.image.load('assets/characters/player/idle/idle1.png')
         self.image = pygame.transform.scale(self.image,(self.image.get_width()*2,self.image.get_height()*2))
         self.name_tag_text = font.render(f'{self.name}', True, (255,255,255), (38,38,38))
@@ -165,7 +180,6 @@ class Player(Entity):
 
     def update(self, tile_hitboxes, time_delta):
         super().update(tile_hitboxes,time_delta)
-
         self.current_tick = pygame.time.get_ticks()
         if self.current_tick-self.frame_time_lapsed > self.animation.frame_length:
             if self.frame_count > self.animation.number_of_frames:
@@ -236,21 +250,20 @@ def Follow_Camera(entity):
 def Move_Player(keys):
     if keys[K_d]:
         if player.touching_ground:
-            player.forces.update({'move_right':[0.8,0]})
+            player.forces.update({'move_right':[0.8,0,False]})
         else:
-            player.forces.update({'move_right':[0.4,0]})
+            player.forces.update({'move_right':[0.4,0,False]})
     else:
         if 'move_right' in player.forces:
             player.forces.pop('move_right')
     if keys[K_a]:
         if player.touching_ground:
-            player.forces.update({'move_left':[-0.8,0]})
+            player.forces.update({'move_left':[-0.8,0,False]})
         else:
-            player.forces.update({'move_left':[-0.4,0]})
+            player.forces.update({'move_left':[-0.4,0,False]})
     else:
         if 'move_left' in player.forces:
             player.forces.pop('move_left')
-
 
 # GAME LOOP
 
@@ -267,25 +280,21 @@ font = pygame.font.Font('assets/fonts/dogica.ttf', 8)
 clock = pygame.time.Clock()
 level = modified_sprite.Group()
 #player = Entity([100,400], [20,20])
-player = Player('madiasu', [100,400], [28,56], False, False)
-player2 = Player('SaiYue', [200,400], [28,56], False, False)
-player3 = Player('Largosof', [300,400], [28,56], False, False)
+player = Player('madiasu', [100,400], [28,56], show_vectors=True)
+player2 = Player('SaiYue', [200,850], [28,56], physics=False)
+player3 = Player('Largosof', [300,850], [28,56], physics=False)
 #player_2 = Entity('player_2', [100,400])
 entities = modified_sprite.Group()
 entities.add(player)
 entities.add(player2)
 entities.add(player3)
 Generate_Tiles()
-player.forces.update({"gravity":[0,-0.4]})
-player2.forces.update({"gravity":[0,-0.4]})
-player3.forces.update({"gravity":[0,-0.4]})
-
-#player_2.forces.update({"gravity":[0,-0.4]})
+player.forces.update({"gravity":[0, -0.4, False]})
+player2.forces.update({"gravity":[0, -0.4, False]})
+player3.forces.update({"gravity":[0, -0.4, False]})
 text = font.render(f'{title} - {version} ({stage})', True, (38,38,38), (255,255,255))
 
 running = True
-
-Change_Animation(player, idle_animation)
 
 while running:
     time_delta = get_time_delta()
@@ -299,7 +308,7 @@ while running:
             if event.key == pygame.K_SPACE and player.jump_count < 2:
                 player.jump_count += 1
                 player.vel[1] = 0
-                player.forces.update({'jump':[0,8]})
+                player.forces.update({'jump':[0 , 8, True]})
             if event.key == pygame.K_d:
                 Change_Animation(player, running_animation, False)
             if event.key == pygame.K_a:
