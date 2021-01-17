@@ -46,7 +46,9 @@ class Tile_Manager():
             else:
                 continue
         print(f'[GAME] Successfully loaded {len(self.tile_images)} tiles')
-
+        print('Tiles:')
+        for tile in self.tile_images:
+            print(f'- {tile}')
     def scale_tiles(self):
         for tile in self.tile_images:
             self.tile_images.update({tile:pygame.transform.scale(self.tile_images[tile], [16,16])})

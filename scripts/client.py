@@ -30,9 +30,9 @@ pygame.init()
 
 # STATIC INIT VARIABLES
 monitor = pygame.display.Info()
-version = "1.0.6"
+version = '1.0.7'
 title = "just don't die!"
-stage = "alpha"
+stage = 'alpha'
 graphics_width = 640
 graphics_height = 360
 fps = 60
@@ -40,8 +40,8 @@ fps = 60
 # INITIALIZE DISPLAY
 flags = pygame.FULLSCREEN | pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF
 display = pygame.display.set_mode((graphics_width, graphics_height), flags, vsync=1)
-pygame.display.set_caption(f"{title} - {version} ({stage})")
-icon = pygame.image.load(f"{gamePath}/assets/icons/game_icon.png")
+pygame.display.set_caption(f'{title} - {version} ({stage})')
+icon = pygame.image.load(f'{gamePath}/assets/icons/game_icon.png')
 pygame.display.set_icon(icon)
 
 # MUSIC
@@ -224,7 +224,7 @@ def Generate_Tiles():
     for row in data:
         for column in row:
             if column == '1':
-                tiles.append(Tile([delta[0],delta[1]],tile_textures.get('stone')))
+                tiles.append(Tile([delta[0],delta[1]],tile_textures.get('orange')))
             else:
                 pass
             delta[0] += 16
@@ -242,21 +242,6 @@ def Render_Tiles(tiles):
         
 def get_time_delta():
     return clock.get_fps()/fps
-
-def Move_Camera(keys):
-    if keys[K_RIGHT]:
-        Scroll_Camera([5,0])
-    if keys[K_LEFT]:
-        Scroll_Camera([-5,0])
-    if keys[K_UP]:
-        Scroll_Camera([0,5])
-    if keys[K_DOWN]:
-        Scroll_Camera([0,-5])
-    print(f'cam-x: {camera[0]} cam-y: {camera[1]}')
-    print(f'player-x: {player.pos[0]} player-y: {player.pos[1]}')
-
-def Follow_Camera(entity):
-    Scroll_Camera_Pos(((entity.pos[0]-camera_pos[0]-310)/10,(entity.pos[1]-camera_pos[1]-200)/10))
 
 def Move_Player(keys):
     if keys[K_d]:
@@ -296,22 +281,25 @@ level = modified_sprite.Group()
 player = Player('madiasu', [100,400], [28,56], show_vectors=True)
 player2 = Player('SaiYue', [200,850], [28,56], physics=False)
 player3 = Player('Largosof', [300,850], [28,56], physics=False)
+Tile_Menu = Tile_Menu(font,tile_textures)
+Tile_Grid_Selector = Tile_Grid_Selector()
 
 
 #player_2 = Entity('player_2', [100,400])
 entities = modified_sprite.Group()
+user_interface_elements = modified_sprite.Group()
 entities.add(player)
 entities.add(player2)
 entities.add(player3)
 Generate_Tiles()
-player.forces.update({"gravity":[0, -0.4, False]})
-player2.forces.update({"gravity":[0, -0.4, False]})
-player3.forces.update({"gravity":[0, -0.4, False]})
+player.forces.update({'gravity':[0, -0.4, False]})
+player2.forces.update({'gravity':[0, -0.4, False]})
+player3.forces.update({'gravity':[0, -0.4, False]})
 text = font.render(f'{title} - {version} ({stage})', True, (38,38,38), (255,255,255))
 
 # GAME LOOP
 running = True
-game_state = 'active'
+game_state = ['editor',True]
 
 while running:
     time_delta = get_time_delta()
@@ -321,7 +309,9 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    if game_state == 'active':
+    if game_state[0] == 'active':
+        if game_state[1] == True:
+            game_state[1] = False
         for event in events:    
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE and player.jump_count < 2:
@@ -353,8 +343,29 @@ while running:
         # SCREEN UPDATE
         pygame.display.flip()
 
-    elif game_state == 'editor':
-        pass
+    elif game_state[0] == 'editor':
+        if game_state[1] == True:
+            user_interface_elements.add(Tile_Menu)
+            user_interface_elements.add(Tile_Grid_Selector)
+            game_state[1] = False
+        # INPUT
+        Move_Camera(keys)
+        display.fill((255,255,255))
+        # RENDER BORDERS
+        pygame.draw.line(display, (255,0,0), (-10-camera[0],2039-camera[1]),(-10-camera[0],-8-camera[1]), 2)
+        pygame.draw.line(display, (255,0,0), (2040-camera[0],2039-camera[1]),(2040-camera[0],-8-camera[1]), 2)
+        pygame.draw.line(display, (255,0,0), (-10-camera[0],2040-camera[1]),(2041-camera[0],2040-camera[1]), 2)
+        pygame.draw.line(display, (255,0,0), (-10-camera[0],-10-camera[1]),(2041-camera[0],-10-camera[1]), 2)
+        Render_Tiles(tiles)
+        fps_text = font.render((f'fps: {round(clock.get_fps(),2)}'), True, (38,38,38), (255,255,255))
+        display.blit(text,(2,2))
+        display.blit(fps_text,(550,2))
+        user_interface_elements.update()
+        user_interface_elements.draw(display)
+
+        # SCREEN UPDATE
+        pygame.display.flip()
+
 
     # FPS CAP
     clock.tick(60)
