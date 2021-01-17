@@ -3,6 +3,7 @@ from pygame.locals import *
 from pygame import *
 import modified_sprite
 import csv
+import os
 
 class Animation():
     def __init__(self, name, path, frame_length, offset):
@@ -24,6 +25,31 @@ class Animation():
         
         self.number_of_frames = len(self.frames)
         print(f'[GAME] Loaded {self.number_of_frames} frames for animation: {name}')
+
+class Tile_Manager():
+    def __init__(self, path):
+        self.tile_images = {}
+        self.path = path
+        self.load_tiles()
+        self.scale_tiles()
+
+    def get(self, identifier):
+        return self.tile_images[identifier]
+
+    def load_tile(self, identifier):
+        self.tile_images.update({f'{identifier}':pygame.image.load(f'{self.path}/{identifier}.png')})
+
+    def load_tiles(self):
+        for filename in os.listdir(self.path):
+            if filename.endswith('.png'): 
+                self.load_tile(filename[:-4])
+            else:
+                continue
+        print(f'[GAME] Successfully loaded {len(self.tile_images)} tiles')
+
+    def scale_tiles(self):
+        for tile in self.tile_images:
+            self.tile_images.update({tile:pygame.transform.scale(self.tile_images[tile], [16,16])})
 
 class Background(modified_sprite.Sprite):
     def __init__(self, path, offset):
@@ -57,13 +83,6 @@ def Generate_Empty_Map(name):
             empty_row.append(0)
         for i in range(128):
             map_data.writerow(empty_row)
-
-def Load_Tile_Assets():
-    tile_images = {}
-    tile_images.update({'dirt':pygame.image.load('assets/tiles/basic.png')})
-    for tile in tile_images:
-        tile_images.update({tile:pygame.transform.scale(tile_images[tile], [16,16])})
-    return tile_images
 
 #def Generate_Map(name):
 #    map_surface = pygame.Surface((1028,1028), pygame.SRCALPHA, 32)

@@ -14,6 +14,18 @@ from rendering import *
 from assets import *
 from user_interface import *
 
+# GET GAME PATH (OS SPESIFIC)
+folder_path = os.path.abspath(os.path.dirname(__file__))
+parent_folders = 1
+
+if sys.platform == 'win32':
+    folder_sign = '\\'
+else:
+    folder_sign = '/'
+
+for i in range(parent_folders):
+  gamePath = folder_path[:folder_path.rindex(folder_sign)]
+
 pygame.init()
 
 # STATIC INIT VARIABLES
@@ -29,7 +41,7 @@ fps = 60
 flags = pygame.FULLSCREEN | pygame.SCALED | pygame.HWSURFACE | pygame.DOUBLEBUF
 display = pygame.display.set_mode((graphics_width, graphics_height), flags, vsync=1)
 pygame.display.set_caption(f"{title} - {version} ({stage})")
-icon = pygame.image.load("assets/icons/game_icon.png")
+icon = pygame.image.load(f"{gamePath}/assets/icons/game_icon.png")
 pygame.display.set_icon(icon)
 
 # MUSIC
@@ -38,7 +50,7 @@ pygame.display.set_icon(icon)
 #Runaway.play()
 
 # LOAD ASSETS
-tile_images = Load_Tile_Assets()
+#tile_images = Load_Tile_Assets()
 
 # FUNCTIONS
 #sign = lambda x: math.copysign(1, x) 
@@ -212,7 +224,7 @@ def Generate_Tiles():
     for row in data:
         for column in row:
             if column == '1':
-                tiles.append(Tile([delta[0],delta[1]],tile_images.get('dirt')))
+                tiles.append(Tile([delta[0],delta[1]],tile_textures.get('stone')))
             else:
                 pass
             delta[0] += 16
@@ -277,6 +289,7 @@ running_animation = Animation('run','assets/characters/player/run/run',100,[-20,
 # OBJECTS
 font = pygame.font.Font('assets/fonts/dogica.ttf', 8)
 clock = pygame.time.Clock()
+tile_textures = Tile_Manager(f'{gamePath}/assets/tiles')
 level = modified_sprite.Group()
 #player = Entity([100,400], [20,20])
 
@@ -298,45 +311,52 @@ text = font.render(f'{title} - {version} ({stage})', True, (38,38,38), (255,255,
 
 # GAME LOOP
 running = True
+game_state = 'active'
+
 while running:
     time_delta = get_time_delta()
     keys = pygame.key.get_pressed()
     events = pygame.event.get()
-
     for event in events:    
         if event.type == pygame.QUIT:
             running = False
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE and player.jump_count < 2:
-                player.jump_count += 1
-                player.vel[1] = 0
-                player.forces.update({'jump':[0 , 8, True]})
-            if event.key == pygame.K_d:
-                Change_Animation(player, running_animation, False)
-            if event.key == pygame.K_a:
-                Change_Animation(player, running_animation, True)
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_a or event.key == pygame.K_d:
-                if not (keys[K_d] and keys[K_a]):
-                    Change_Animation(player, idle_animation, True)
-                    
-    # INPUT
-    Move_Player(keys)
-    Follow_Camera(player)
 
-    # RENDERING
-    display.fill((255,255,255))
-    display.blit(text,(2,2))
-    Render_Tiles(tiles)
-    entities.update(tile_hitboxes,time_delta)
-    entities.draw(display) 
-    fps_text = font.render((f'fps: {round(clock.get_fps(),2)}'), True, (38,38,38), (255,255,255))
-    display.blit(fps_text,(550,2))
+    if game_state == 'active':
+        for event in events:    
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE and player.jump_count < 2:
+                    player.jump_count += 1
+                    player.vel[1] = 0
+                    player.forces.update({'jump':[0 , 8, True]})
+                if event.key == pygame.K_d:
+                    Change_Animation(player, running_animation, False)
+                if event.key == pygame.K_a:
+                    Change_Animation(player, running_animation, True)
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_a or event.key == pygame.K_d:
+                    if not (keys[K_d] and keys[K_a]):
+                        Change_Animation(player, idle_animation, True)
+                        
+        # INPUT
+        Move_Player(keys)
+        Follow_Camera(player)
 
-    # SCREEN UPDATE
-    pygame.display.flip()
+        # RENDERING
+        display.fill((255,255,255))
+        display.blit(text,(2,2))
+        Render_Tiles(tiles)
+        entities.update(tile_hitboxes,time_delta)
+        entities.draw(display) 
+        fps_text = font.render((f'fps: {round(clock.get_fps(),2)}'), True, (38,38,38), (255,255,255))
+        display.blit(fps_text,(550,2))
+
+        # SCREEN UPDATE
+        pygame.display.flip()
+
+    elif game_state == 'editor':
+        pass
 
     # FPS CAP
     clock.tick(60)
-    
+
 pygame.quit()
