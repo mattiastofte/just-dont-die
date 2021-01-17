@@ -4,6 +4,7 @@ from pygame.locals import *
 from pygame import *
 import modified_sprite
 import os
+import sys
 import math 
 import random
 import pickle
@@ -278,9 +279,12 @@ font = pygame.font.Font('assets/fonts/dogica.ttf', 8)
 clock = pygame.time.Clock()
 level = modified_sprite.Group()
 #player = Entity([100,400], [20,20])
+
 player = Player('madiasu', [100,400], [28,56], show_vectors=True)
 player2 = Player('SaiYue', [200,850], [28,56], physics=False)
 player3 = Player('Largosof', [300,850], [28,56], physics=False)
+
+
 #player_2 = Entity('player_2', [100,400])
 entities = modified_sprite.Group()
 entities.add(player)
