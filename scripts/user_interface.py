@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 from pygame import *
 import modified_sprite
+import rendering
 import math
 
 class Button(modified_sprite.Sprite):
@@ -63,6 +64,7 @@ class Tile_Grid_Selector(modified_sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.rect = pygame.Rect(200,200,16,16)
         self.offset = [0,0]
+        self.grid_pos = [0,0]
         self.image = Surface((16,16))
         self.image.fill((0,0,0))
         self.image.set_colorkey((0,0,0))
@@ -73,7 +75,9 @@ class Tile_Grid_Selector(modified_sprite.Sprite):
         pygame.draw.line(self.image,(0,255,0),(0,14),(0,0),2)
 
     def update(self):
-        self.rect.right = 16*pygame.mouse.get_pos()[0]//16
-        self.rect.bottom = 16*pygame.mouse.get_pos()[1]//16
-
+        self.rect.right = 16*int(pygame.mouse.get_pos()[0]/16)-int(rendering.camera[0]%16)+8
+        self.rect.bottom = 16*int(pygame.mouse.get_pos()[1]/16)-int(rendering.camera[1]%16)+8
+        self.grid_pos[0] = int((self.rect.x + rendering.camera[0]-16)/16)+1
+        self.grid_pos[1] = int((self.rect.y + rendering.camera[1]-16)/16)+1
+        print(self.grid_pos)
         

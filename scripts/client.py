@@ -299,7 +299,7 @@ text = font.render(f'{title} - {version} ({stage})', True, (38,38,38), (255,255,
 
 # GAME LOOP
 running = True
-game_state = ['editor',True]
+game_state = ['active',True]
 
 while running:
     time_delta = get_time_delta()
@@ -345,8 +345,8 @@ while running:
 
     elif game_state[0] == 'editor':
         if game_state[1] == True:
-            user_interface_elements.add(Tile_Menu)
             user_interface_elements.add(Tile_Grid_Selector)
+            user_interface_elements.add(Tile_Menu)
             game_state[1] = False
         # INPUT
         Move_Camera(keys)
